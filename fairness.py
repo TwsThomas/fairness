@@ -1,23 +1,19 @@
 
 import numpy as np
 import pandas as pd
-import copy
 
 np.set_printoptions(precision=4)
 
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler
 from sklearn.base import BaseEstimator, RegressorMixin
-from sklearn.linear_model import LinearRegression, RidgeCV
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.compose import ColumnTransformer
 from sklearn.linear_model import LogisticRegression
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score, confusion_matrix
+from sklearn.metrics import confusion_matrix
 
 import matplotlib.pyplot as plt
+
 def plot_confusion_matrix(y_true, y_pred, classes,
                           normalize=False,
                           title=None,
@@ -112,80 +108,3 @@ def reweigth_samples(lambda_, protected_group, y_bias):
     w = np.array(w_tilde / (1 + w_tilde) * y_bias +\
                  1 / (1 + w_tilde) * (1 - y_bias))
     return w
-
-
-
-
-# def show_score(y_pred, y_test, G, verbose=False):
-#     #  return ['err_G', 'err', 'fair_dp', 'fair_eop'], 
-
-#     G_test = np.array(G, dtype=bool)
-    
-#     if verbose:
-#         print('Error (1-Accuraccy):')
-#         print('on G \t on X')
-#     score = []
-#     for _, mask in zip(['G', 'all'], [G_test, [True]*len(y_test)]):
-#         score.append(1-accuracy_score(y_test[mask], y_pred[mask]))
-#         if verbose:
-#             print(round(score[-1],4), end='\t')
-
-#     fair_dp, fair_eop = fairness(y_pred, y_test, G, verbose=False)
-#     if verbose:
-#         print()
-#         print('fair_dp \t fair_eop')
-#         print(round(fair_dp,4),'\t', round(fair_eop,4))
-    
-#     #  return ['err_G', 'err', 'fair_dp', 'fair_eop'], 
-#     return score + [fair_dp, fair_eop]
-
-
-
-
-# def reweigth_samples(lambda_, protected_groups, y_bias):
-#     # Compute the reweighting w.r.t the protected group
-
-#     re_weight = np.array([lambda_[k] * Gk[k] for k in range(len(Gk))])
-#     w_tilde = np.exp(np.sum(re_weight, axis = 0))  # n-vectors
-#     assert w_tilde.shape[0] == (len(y_train))
-#     w = np.array(w_tilde / (1 + w_tilde) * y_train +\
-#         1 / (1 + w_tilde) * (1 - y_train))
-#     return w
-
-
-# def fairness_error(lr, X, y_true, Gk, notion = 'dp'):
-    
-#     y_pred = np.array(lr.predict(X), dtype=bool)
-#     y_true = np.array(y_true, dtype=bool)
-    
-#     l_dp = []
-#     l_eop = []
-        
-#     for G in Gk:
-#         G = np.array(G, dtype=bool)
-    
-#         Zg_test = sum(G) / len(y_true)
-
-#         P = sum(y_pred) # Positive prediction
-#         P_G = sum(y_pred * G) # Positive prediction on G
-#         P_test = sum(y_true) # Positive label (in y_true)
-#         P_test_G = sum(y_true * G) # Positive label on G (in y_true)
-#         TP = sum(y_pred * y_true) # True Positif 
-#         TP_G = sum(y_pred * y_true * G) # True Positif on G
-
-#         fair_dp = abs(P_G / Zg_test - P)
-#         fair_dp /= len(y_pred)
-
-#         # print('eop', TP_G, P_test_G, TP, P_test, abs(TP_G / P_test_G - TP / P_test))
-#         fair_eop = abs(TP_G / P_test_G - TP / P_test) # violation
-#         fair_eop /= len(y_pred)
-
-#         l_dp.append(fair_dp)
-#         l_eop.append(fair_eop)
-
-#     if notion == 'dp':
-#         return np.array(l_dp)
-#     elif notion == 'eop':
-#         return np.array(l_eop)
-#     else:
-#         return None
