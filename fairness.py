@@ -14,6 +14,13 @@ from sklearn.metrics import confusion_matrix
 
 import matplotlib.pyplot as plt
 
+from joblib import Memory, Parallel, delayed
+location = './cachedir'
+memory = Memory(location, verbose=0)
+
+
+
+
 def plot_confusion_matrix(y_true, y_pred, classes,
                           normalize=False,
                           title=None,
@@ -72,7 +79,10 @@ def plot_confusion_matrix(y_true, y_pred, classes,
 
 def fairness_violation(y_pred, y_test, protected_group,
                        notion='demographic_parity'):
-    # Compute the fairness violation w.r.t. the protected group
+    """ Compute the fairness violation w.r.t. the protected group
+
+    notion is either 'demographic_parity' or 'equal_opportunity'
+    """
 
     if notion=='demographic_parity':
         # demographic_parity compare the positive prediction rate 
