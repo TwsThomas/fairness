@@ -19,6 +19,16 @@ location = './cachedir'
 memory = Memory(location, verbose=0)
 
 
+"""
+ 1. **Demographic parity** [Dwork et al., 2012]() A fair classifier should make positive predictions on protected groups at the same rate as on all of X
+
+Also the **positive predictions** are **higher** in X all than on the protected group. That violate *the Demographic parity* fairness.
+"""
+    
+#     print(f"lambda: {lambda_:.6f}, "
+#           f"train violation: {train_violation:.6f}, "
+#           f"test violation: {test_violation:.6f}")
+
 
 
 def plot_confusion_matrix(y_true, y_pred, classes,
@@ -77,13 +87,15 @@ def plot_confusion_matrix(y_true, y_pred, classes,
     return ax
 
 
+
 def fairness_violation(y_pred, y_test, protected_group,
-                       notion='demographic_parity'):
+                       notion='equal_opportunity'):
     """ Compute the fairness violation w.r.t. the protected group
 
     notion is either 'demographic_parity' or 'equal_opportunity'
     """
 
+    notion = 'equal_opportunity'
     if notion=='demographic_parity':
         # demographic_parity compare the positive prediction rate 
         
@@ -102,19 +114,42 @@ def fairness_violation(y_pred, y_test, protected_group,
 
         # Positive true label
         P_true_X = sum(y_test) 
-        P_true_pg = sum(y_test * protected_group) 
+        P_true_pg = sum(y_test & protected_group) 
         # True Positif
-        TP_X = sum(y_pred * y_test) 
-        TP_pg = sum(y_pred * protected_group * y_test)    
+        TP_X = sum(y_pred & y_test) 
+        TP_pg = sum(y_pred & protected_group & y_test)    
 
         equal_opportunity_violation = TP_pg / P_true_pg - TP_X / P_true_X
         return equal_opportunity_violation
 
 
-def reweigth_samples(lambda_, protected_group, y_bias):
-    # Compute the reweighting w.r.t the protected group
     
-    w_tilde = np.exp(lambda_ * protected_group)
-    w = np.array(w_tilde / (1 + w_tilde) * y_bias +\
-                 1 / (1 + w_tilde) * (1 - y_bias))
-    return w
+
+
+def get_generated_bias_data(n_samples=20000, lambda0 = 1.7, random_state=1):
+    # generate y_bias according to P.1. 
+    
+    np.random.seed(random_state)
+    X, y_true = make_classification(n_samples=n_samples,
+                                    random_state=random_state, n_features=20) 
+    protected_group = X[:,0] > 0 
+    ratio_pg = np.sum(protected_group) / len(y_true)
+    
+    y_bias = y_true.copy()
+    y_bias = y_true * np.exp(-lambda0 * (y_true * (protected_group/ ratio_pg - 1)))
+    y_bias /= max(y_bias)
+    
+    y_obs = np.random.binomial(1, y_bias, len(y_bias))
+    return train_test_split(X, y_true, y_obs,
+                            protected_group,
+                            random_state=random_state)
+
+# X = np.random.uniform(-1, 1, size=(500,2))
+# y_true = X[:,1] > 0
+# pg = X[:,0] < -.7
+# y_bias = y_true.copy()
+# for i in range(len(X)):
+#     if pg[i]:
+#         if y_true[i]:
+#             y_bias[i] = np.random.binomial(1, .7)
+            
